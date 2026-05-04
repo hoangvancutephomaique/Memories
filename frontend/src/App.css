@@ -381,6 +381,26 @@ input.error, textarea.error { border-color: var(--danger); }
   line-height: 1.5;
 }
 
+.remember-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: -0.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.remember-row input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+}
+
+.remember-row label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
 .modal-error { margin-top: -0.5rem; margin-bottom: 0.5rem; }
 
 .modal-actions {

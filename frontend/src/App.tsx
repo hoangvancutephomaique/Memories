@@ -6,6 +6,7 @@ import "./App.css";
 
 const OWNER_USER = import.meta.env.VITE_OWNER_USER as string;
 const OWNER_PASS = import.meta.env.VITE_OWNER_PASS as string;
+const OWNER_REMEMBER_KEY = "guestbook_owner_remembered";
 
 const EMPTY_FORM: NewEntry = { name: "", message: "" };
 
@@ -28,6 +29,7 @@ export default function App() {
   const [showModal, setShowModal] = useState(false);
   const [userInput, setUserInput] = useState("");
   const [pwInput, setPwInput] = useState("");
+  const [rememberDevice, setRememberDevice] = useState(false);
   const [pwError, setPwError] = useState("");
   const userRef = useRef<HTMLInputElement>(null);
 
@@ -44,9 +46,22 @@ export default function App() {
     if (showDeleteModal) setTimeout(() => deletePwRef.current?.focus(), 50);
   }, [showDeleteModal]);
 
+  useEffect(() => {
+    try {
+      const remembered = localStorage.getItem(OWNER_REMEMBER_KEY) === "1";
+      if (remembered) {
+        setUnlocked(true);
+        loadEntries();
+      }
+    } catch {
+      // localStorage may be unavailable in strict browser/privacy modes
+    }
+  }, []);
+
   function openOwnerView() {
     setUserInput("");
     setPwInput("");
+    setRememberDevice(false);
     setPwError("");
     setShowModal(true);
   }
@@ -54,6 +69,12 @@ export default function App() {
   function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (userInput === OWNER_USER && pwInput === OWNER_PASS) {
+      try {
+        if (rememberDevice) localStorage.setItem(OWNER_REMEMBER_KEY, "1");
+        else localStorage.removeItem(OWNER_REMEMBER_KEY);
+      } catch {
+        // ignore storage errors
+      }
       unlock();
     } else {
       setPwError("Incorrect username or password.");
@@ -74,6 +95,15 @@ export default function App() {
     setEntries([]);
     setDeleteArmed(false);
     deleteSecretRef.current = "";
+  }
+
+  function forgetThisDevice() {
+    try {
+      localStorage.removeItem(OWNER_REMEMBER_KEY);
+    } catch {
+      // ignore storage errors
+    }
+    lock();
   }
 
   function openDeleteModal() {
@@ -206,6 +236,15 @@ export default function App() {
                   autoComplete="current-password"
                 />
               </div>
+              <div className="remember-row">
+                <input
+                  id="remember-device"
+                  type="checkbox"
+                  checked={rememberDevice}
+                  onChange={(e) => setRememberDevice(e.target.checked)}
+                />
+                <label htmlFor="remember-device">Remember on this device</label>
+              </div>
               {pwError && <p className="field-error modal-error">{pwError}</p>}
               <div className="modal-actions">
                 <button type="button" className="btn-ghost" onClick={() => setShowModal(false)}>
@@ -336,6 +375,14 @@ export default function App() {
                   )}
                   <button className="btn-ghost btn-lock" onClick={lock} title="Lock">
                     🔓 Lock
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-ghost btn-lock"
+                    onClick={forgetThisDevice}
+                    title="Forget this device"
+                  >
+                    Forget device
                   </button>
                 </div>
               </div>
