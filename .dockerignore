@@ -1,0 +1,8 @@
+frontend/node_modules
+frontend/dist
+node_modules
+.git
+.github
+**/.DS_Store
+backend/target
+backend/data
