@@ -175,9 +175,9 @@ export default function App() {
       {/* ── Hero ───────────────────────────────────────── */}
       <header className="hero">
         <div className="hero-content">
-          <span className="hero-badge">✨ Sign the Book</span>
-          <h1>Guestbook</h1>
-          <p>Leave a message and let the world know you were here.</p>
+          <span className="hero-badge">✨ Lưu lại kỷ niệm</span>
+          <h1>🌸 🌷 Hoàng Vân ☁️ 💭</h1>
+          <p>Để lại chút kỷ niệm ở đây nhé!!!🥰</p>
         </div>
       </header>
 
@@ -187,18 +187,18 @@ export default function App() {
           <h2>Leave a message</h2>
           {submitSuccess && (
             <div className="alert alert-success">
-              Your message was added — thank you!
+              Lưu bút của bạn đã được thêm vào ký ức của mình rồi đó ✨
             </div>
           )}
           <form onSubmit={handleSubmit} noValidate>
             <div className="field">
               <label htmlFor="name">
-                Name <span className="optional">(optional — leave blank to post anonymously)</span>
+                Tên <span className="optional">(thích thì ghi, không thì thôi 😄)</span>
               </label>
               <input
                 id="name"
                 type="text"
-                placeholder="Anonymous"
+                placeholder="Danh tính của bạn"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className={errors.name ? "error" : ""}
@@ -206,11 +206,11 @@ export default function App() {
               {errors.name && <span className="field-error">{errors.name}</span>}
             </div>
             <div className="field">
-              <label htmlFor="message">Message *</label>
+              <label htmlFor="message">Lời nhắn *</label>
               <textarea
                 id="message"
                 rows={4}
-                placeholder="Say something nice…"
+                placeholder="Để lại vài dòng kỷ niệm nha…"
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
                 className={errors.message ? "error" : ""}
@@ -219,7 +219,7 @@ export default function App() {
               {errors.message && <span className="field-error">{errors.message}</span>}
             </div>
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? "Sending…" : "Sign the Guestbook"}
+              {submitting ? "Sending…" : "Ghi vào lưu bút"}
             </button>
           </form>
         </section>
