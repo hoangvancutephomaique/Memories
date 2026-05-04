@@ -21,5 +21,7 @@ services:
         sync: false
       - key: SPRING_DATASOURCE_PASSWORD
         sync: false
+      - key: GUESTBOOK_DELETE_SECRET
+        sync: false # optional: if set, DELETE requires this value in X-Delete-Secret (see frontend "Enable delete")
       - key: CORS_ALLOWED_ORIGINS
         sync: false # set manually to your Pages Origin(s), comma-separated if multiple

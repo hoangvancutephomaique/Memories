@@ -1,5 +1,6 @@
 package com.guestbook.controller;
 
+import com.guestbook.config.DeleteSecretGuard;
 import com.guestbook.model.GuestEntry;
 import com.guestbook.service.GuestEntryService;
 import jakarta.validation.Valid;
@@ -14,9 +15,11 @@ import java.util.List;
 public class GuestEntryController {
 
     private final GuestEntryService service;
+    private final DeleteSecretGuard deleteSecretGuard;
 
-    public GuestEntryController(GuestEntryService service) {
+    public GuestEntryController(GuestEntryService service, DeleteSecretGuard deleteSecretGuard) {
         this.service = service;
+        this.deleteSecretGuard = deleteSecretGuard;
     }
 
     @GetMapping
@@ -31,7 +34,12 @@ public class GuestEntryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Delete-Secret", required = false) String deleteSecret) {
+        if (deleteSecretGuard.requiresDeleteSecret() && !deleteSecretGuard.headerMatches(deleteSecret)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         service.delete(id);
         return ResponseEntity.noContent().build();
     }

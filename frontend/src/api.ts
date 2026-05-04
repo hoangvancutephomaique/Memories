@@ -27,5 +27,13 @@ export const fetchEntries = () =>
 export const createEntry = (entry: NewEntry) =>
   api.post<GuestEntry>("/entries", entry).then((r) => r.data);
 
-export const deleteEntry = (id: number) =>
-  api.delete(`/entries/${id}`);
+export const verifyDeleteSecret = (secret: string) =>
+  api.post("/auth/verify-delete-secret", { secret });
+
+export const deleteEntry = (id: number, deleteSecret: string | null) =>
+  api.delete(`/entries/${id}`, {
+    headers:
+      deleteSecret != null && deleteSecret !== ""
+        ? { "X-Delete-Secret": deleteSecret }
+        : {},
+  });

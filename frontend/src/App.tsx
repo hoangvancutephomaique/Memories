@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { fetchEntries, createEntry, deleteEntry } from "./api";
+import { fetchEntries, createEntry, deleteEntry, verifyDeleteSecret } from "./api";
 import type { GuestEntry, NewEntry } from "./api";
 import "./App.css";
 
@@ -21,16 +21,28 @@ export default function App() {
   const [entries, setEntries] = useState<GuestEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // password modal
+  const [deleteArmed, setDeleteArmed] = useState(false);
+  const deleteSecretRef = useRef<string>("");
+
+  // password modal (view only)
   const [showModal, setShowModal] = useState(false);
   const [userInput, setUserInput] = useState("");
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState("");
   const userRef = useRef<HTMLInputElement>(null);
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePwInput, setDeletePwInput] = useState("");
+  const [deletePwError, setDeletePwError] = useState("");
+  const deletePwRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (showModal) setTimeout(() => userRef.current?.focus(), 50);
   }, [showModal]);
+
+  useEffect(() => {
+    if (showDeleteModal) setTimeout(() => deletePwRef.current?.focus(), 50);
+  }, [showDeleteModal]);
 
   function openOwnerView() {
     setUserInput("");
@@ -52,12 +64,41 @@ export default function App() {
     setShowModal(false);
     setPwInput("");
     setUnlocked(true);
+    setDeleteArmed(false);
+    deleteSecretRef.current = "";
     loadEntries();
   }
 
   function lock() {
     setUnlocked(false);
     setEntries([]);
+    setDeleteArmed(false);
+    deleteSecretRef.current = "";
+  }
+
+  function openDeleteModal() {
+    setDeletePwInput("");
+    setDeletePwError("");
+    setShowDeleteModal(true);
+  }
+
+  async function handleDeletePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setDeletePwError("");
+    try {
+      await verifyDeleteSecret(deletePwInput);
+      deleteSecretRef.current = deletePwInput;
+      setDeleteArmed(true);
+      setShowDeleteModal(false);
+      setDeletePwInput("");
+    } catch {
+      setDeletePwError("Incorrect delete password.");
+    }
+  }
+
+  function revokeDeleteMode() {
+    setDeleteArmed(false);
+    deleteSecretRef.current = "";
   }
 
   async function loadEntries() {
@@ -104,9 +145,14 @@ export default function App() {
   }
 
   async function handleDelete(id: number) {
+    if (!deleteArmed) return;
     if (!confirm("Remove this entry?")) return;
-    await deleteEntry(id);
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+    try {
+      await deleteEntry(id, deleteSecretRef.current);
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+    } catch {
+      alert("Delete failed. Check the delete password or try enabling delete again.");
+    }
   }
 
   // ── avatar helpers ────────────────────────────────────────
@@ -133,7 +179,7 @@ export default function App() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Owner login</h3>
-            <p className="modal-sub">Enter your credentials to view and manage messages.</p>
+            <p className="modal-sub">Enter your credentials to view messages.</p>
             <form onSubmit={handlePasswordSubmit}>
               <div className="field">
                 <label htmlFor="owner-user">Username</label>
@@ -166,6 +212,43 @@ export default function App() {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">Unlock</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete password</h3>
+            <p className="modal-sub">
+              Enter the server delete secret to show remove buttons. This is set as{" "}
+              <code>GUESTBOOK_DELETE_SECRET</code> on Render, not in GitHub.
+            </p>
+            <form onSubmit={handleDeletePasswordSubmit}>
+              <div className="field">
+                <label htmlFor="delete-pw">Delete password</label>
+                <input
+                  ref={deletePwRef}
+                  id="delete-pw"
+                  type="password"
+                  value={deletePwInput}
+                  onChange={(e) => {
+                    setDeletePwInput(e.target.value);
+                    setDeletePwError("");
+                  }}
+                  placeholder="••••••••"
+                  className={deletePwError ? "error" : ""}
+                  autoComplete="off"
+                />
+              </div>
+              {deletePwError && <p className="field-error modal-error">{deletePwError}</p>}
+              <div className="modal-actions">
+                <button type="button" className="btn-ghost" onClick={() => setShowDeleteModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">Enable deleting</button>
               </div>
             </form>
           </div>
@@ -242,9 +325,20 @@ export default function App() {
                     ? `${entries.length} message${entries.length !== 1 ? "s" : ""}`
                     : "Messages"}
                 </h2>
-                <button className="btn-ghost btn-lock" onClick={lock} title="Lock">
-                  🔓 Lock
-                </button>
+                <div className="entries-header-actions">
+                  {!deleteArmed ? (
+                    <button type="button" className="btn-ghost btn-enable-delete" onClick={openDeleteModal}>
+                      Enable delete
+                    </button>
+                  ) : (
+                    <button type="button" className="btn-ghost btn-enable-delete" onClick={revokeDeleteMode}>
+                      Hide delete
+                    </button>
+                  )}
+                  <button className="btn-ghost btn-lock" onClick={lock} title="Lock">
+                    🔓 Lock
+                  </button>
+                </div>
               </div>
 
               {loading ? (
@@ -278,13 +372,15 @@ export default function App() {
                         </div>
                         <p className="entry-message">{entry.message}</p>
                       </div>
-                      <button
-                        className="btn-delete"
-                        onClick={() => handleDelete(entry.id)}
-                        title="Delete entry"
-                      >
-                        ✕
-                      </button>
+                      {deleteArmed && (
+                        <button
+                          className="btn-delete"
+                          onClick={() => handleDelete(entry.id)}
+                          title="Delete entry"
+                        >
+                          ✕
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
