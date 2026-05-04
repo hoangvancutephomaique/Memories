@@ -259,7 +259,7 @@ export default function App() {
         <div className="hero-content">
           <span className="hero-badge">✨ Hoàng Vân ✨</span>
           <h1>Guestbook</h1>
-          <p>ĐLet’s leave a piece of our youth here 🌷</p>
+          <p>Let’s leave a piece of our youth here 🌷</p>
         </div>
       </header>
 
