@@ -1,0 +1,18 @@
+{
+  "name": "guestbook",
+  "version": "1.0.0",
+  "description": "A full-stack guestbook built with **Spring Boot (Java)** and **React (TypeScript + Vite)**.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently --names \"api,web\" --prefix-colors \"cyan,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && ./mvnw spring-boot:run",
+    "dev:frontend": "cd frontend && npm run dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

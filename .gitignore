@@ -1,0 +1,16 @@
+# Env files – never commit real credentials
+.env
+.env.local
+.env.*.local
+
+# Maven build output
+backend/target/
+backend/data/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/node/
+
+# macOS
+.DS_Store
