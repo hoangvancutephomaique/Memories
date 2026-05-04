@@ -175,16 +175,16 @@ export default function App() {
       {/* ── Hero ───────────────────────────────────────── */}
       <header className="hero">
         <div className="hero-content">
-          <span className="hero-badge">✨ Lưu lại kỷ niệm</span>
+          <span className="hero-badge">✨ Lưu lại chút kỷ niệm</span>
           <h1>🌸 🌷 Hoàng Vân ☁️ 💭</h1>
-          <p>Để lại chút kỷ niệm ở đây nhé!!!🥰</p>
+          <p>Để lại chút kỷ niệm ở đây nhé!!!</p>
         </div>
       </header>
 
       <main className="main">
         {/* ── Sign form ──────────────────────────────────── */}
         <section className="card form-card">
-          <h2>Leave a message</h2>
+          <h2>Để lại vài điều mà bạn chưa kịp nói ra...</h2>
           {submitSuccess && (
             <div className="alert alert-success">
               Lưu bút của bạn đã được thêm vào ký ức của mình rồi đó ✨
