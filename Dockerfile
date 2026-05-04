@@ -3,7 +3,8 @@ FROM maven:3.9-eclipse-temurin-21-alpine AS build
 WORKDIR /src
 COPY backend ./backend
 WORKDIR /src/backend
-RUN chmod +x mvnw && ./mvnw -B package -DskipTests
+# Use image Maven (not ./mvnw): avoids CRLF/line-ending issues on Linux and missing wrapper jar in some clones.
+RUN mvn -B package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
