@@ -436,12 +436,12 @@ export default function App() {
                     className="google-signin-slot"
                   />
                   <p className="google-auth-hint">
-                    A Google account (such as Gmail) is required to write here. Sign in once to unlock the form—we keep your Google name or email private on the server.
+                    Bạn cần có tài khoản Google để viết tại đây. Chỉ cần đăng nhập một lần để mở khóa biểu mẫu - chúng tôi sẽ giữ riêng tư tên và email Google của bạn trên máy chủ!
                   </p>
                 </>
               ) : (
                 <div className="google-connected">
-                  <p className="google-ok">You’re signed in with Google. You can write your message now; your Google display name and email (when Google provides them) are stored only on the server and are not shown on the guestbook.</p>
+                  <p className="google-ok">Bạn đã đăng nhập bằng Google. Bạn có thể viết tin nhắn ngay; tên và email Google của bạn chỉ được lưu riêng tư trên máy chủ.</p>
                   <button type="button" className="btn-ghost btn-google-out" onClick={disconnectGoogle}>
                     Sign out
                   </button>
@@ -451,7 +451,7 @@ export default function App() {
             </div>
             {!canWrite && (
               <div className="alert alert-auth-required">
-                Sign in with Google (Gmail or another Google account) to unlock the form and send a message.
+                Đăng nhập bằng Gmail để mở khóa biểu mẫu và gửi tin nhắn.
               </div>
             )}
             <div className="field">
