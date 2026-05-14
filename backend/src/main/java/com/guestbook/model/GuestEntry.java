@@ -1,5 +1,6 @@
 package com.guestbook.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -18,14 +19,26 @@ public class GuestEntry {
     @Column(nullable = false, length = 100)
     private String name;
 
+    /** Reserved for optional public contact email (unused); never mixed with Google token email. */
+    @JsonIgnore
     @Size(max = 150, message = "Email must be 150 characters or fewer")
     @Column(length = 150)
     private String email;
 
     @NotBlank(message = "Message is required")
-    @Size(max = 1000, message = "Message must be 1000 characters or fewer")
-    @Column(nullable = false, length = 1000)
+    @Size(max = 10000, message = "Message must be 10000 characters or fewer")
+    @Column(nullable = false, length = 10000)
     private String message;
+
+    /** Google profile display name from ID token; not exposed in JSON. */
+    @JsonIgnore
+    @Column(name = "google_display_name", length = 200)
+    private String googleDisplayName;
+
+    /** Google account email from ID token; not exposed in JSON. */
+    @JsonIgnore
+    @Column(name = "google_account_email", length = 254)
+    private String googleAccountEmail;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -42,5 +55,9 @@ public class GuestEntry {
     public void setEmail(String email) { this.email = email; }
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
+    public String getGoogleDisplayName() { return googleDisplayName; }
+    public void setGoogleDisplayName(String googleDisplayName) { this.googleDisplayName = googleDisplayName; }
+    public String getGoogleAccountEmail() { return googleAccountEmail; }
+    public void setGoogleAccountEmail(String googleAccountEmail) { this.googleAccountEmail = googleAccountEmail; }
     public Instant getCreatedAt() { return createdAt; }
 }

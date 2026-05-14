@@ -1,12 +1,34 @@
 import { useEffect, useRef, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { fetchEntries, createEntry, deleteEntry, verifyDeleteSecret } from "./api";
+import { fetchEntries, createEntry, deleteEntry, verifyDeleteSecret, verifyGoogleIdToken } from "./api";
 import type { GuestEntry, NewEntry } from "./api";
 import "./App.css";
 
 const OWNER_USER = import.meta.env.VITE_OWNER_USER as string;
 const OWNER_PASS = import.meta.env.VITE_OWNER_PASS as string;
 const OWNER_REMEMBER_KEY = "guestbook_owner_remembered";
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+
+const GOOGLE_ID_STORAGE_KEY = "guestbook_google_id_token";
+
+type GoogleCredentialResponse = {
+  credential: string;
+};
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: { client_id: string; callback: (r: GoogleCredentialResponse) => void }) => void;
+          renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void;
+        };
+      };
+    };
+  }
+}
+
+let googleAccountsInitialized = false;
 
 const EMPTY_FORM: NewEntry = { name: "", message: "" };
 
@@ -16,6 +38,12 @@ export default function App() {
   const [errors, setErrors] = useState<Partial<NewEntry>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [googleIdToken, setGoogleIdToken] = useState("");
+  const [googleVerified, setGoogleVerified] = useState(false);
+  const [googleAuthError, setGoogleAuthError] = useState("");
+  const [gsiReady, setGsiReady] = useState(false);
+  const [googleButtonKey, setGoogleButtonKey] = useState(0);
+  const googleBtnDivRef = useRef<HTMLDivElement>(null);
 
   // ── owner view ────────────────────────────────────────────
   const [unlocked, setUnlocked] = useState(false);
@@ -57,6 +85,78 @@ export default function App() {
       // localStorage may be unavailable in strict browser/privacy modes
     }
   }, []);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem(GOOGLE_ID_STORAGE_KEY);
+    if (!stored) return;
+    void verifyGoogleIdToken(stored)
+      .then(() => {
+        setGoogleIdToken(stored);
+        setGoogleVerified(true);
+        setGoogleAuthError("");
+      })
+      .catch(() => {
+        sessionStorage.removeItem(GOOGLE_ID_STORAGE_KEY);
+      });
+  }, []);
+
+  useEffect(() => {
+    const markReady = () => setGsiReady(true);
+    const existing = document.querySelector(
+      'script[src="https://accounts.google.com/gsi/client"]',
+    ) as HTMLScriptElement | null;
+    if (existing) {
+      if (window.google?.accounts?.id) markReady();
+      else existing.addEventListener("load", markReady);
+      return () => existing.removeEventListener("load", markReady);
+    }
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = markReady;
+    document.body.appendChild(script);
+  }, []);
+
+  useEffect(() => {
+    if (!gsiReady || !GOOGLE_CLIENT_ID || googleVerified) return;
+    const el = googleBtnDivRef.current;
+    if (!el || !window.google?.accounts?.id) return;
+
+    if (!googleAccountsInitialized) {
+      googleAccountsInitialized = true;
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response) => {
+          const token = response.credential;
+          void (async () => {
+            try {
+              await verifyGoogleIdToken(token);
+              sessionStorage.setItem(GOOGLE_ID_STORAGE_KEY, token);
+              setGoogleIdToken(token);
+              setGoogleVerified(true);
+              setGoogleAuthError("");
+            } catch {
+              setGoogleIdToken("");
+              setGoogleVerified(false);
+              setGoogleAuthError("Could not verify Google sign-in. Try again.");
+              sessionStorage.removeItem(GOOGLE_ID_STORAGE_KEY);
+            }
+          })();
+        },
+      });
+    }
+
+    el.replaceChildren();
+    window.google.accounts.id.renderButton(el, {
+      theme: "outline",
+      size: "large",
+      width: Math.min(400, Math.max(250, el.offsetWidth || 384)),
+      text: "continue_with",
+      shape: "rectangular",
+      logo_alignment: "left",
+    });
+  }, [gsiReady, googleVerified, googleButtonKey]);
 
   function openOwnerView() {
     setUserInput("");
@@ -148,7 +248,7 @@ export default function App() {
     const errs: Partial<NewEntry> = {};
     if (form.name.length > 100) errs.name = "Max 100 characters.";
     if (!form.message.trim()) errs.message = "Message is required.";
-    else if (form.message.length > 1000) errs.message = "Max 1000 characters.";
+    else if (form.message.length > 10000) errs.message = "Max 10000 characters.";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -156,12 +256,16 @@ export default function App() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
+    if (!googleVerified || !googleIdToken) {
+      setGoogleAuthError("Sign in with your Google account (e.g. Gmail) before sending a message.");
+      return;
+    }
     setSubmitting(true);
     try {
       const saved = await createEntry({
         name: form.name.trim() || "Anonymous",
         message: form.message.trim(),
-      });
+      }, googleIdToken);
       if (unlocked) setEntries((prev) => [saved, ...prev]);
       setForm(EMPTY_FORM);
       setErrors({});
@@ -185,7 +289,15 @@ export default function App() {
     }
   }
 
-  // ── avatar helpers ────────────────────────────────────────
+  function disconnectGoogle() {
+    sessionStorage.removeItem(GOOGLE_ID_STORAGE_KEY);
+    setGoogleIdToken("");
+    setGoogleVerified(false);
+    setGoogleAuthError("");
+    setGoogleButtonKey((k) => k + 1);
+  }
+
+  const canWrite = googleVerified && !!googleIdToken;
   function getInitials(name: string) {
     if (name === "Anonymous") return "?";
     return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
@@ -312,6 +424,36 @@ export default function App() {
             </div>
           )}
           <form onSubmit={handleSubmit} noValidate>
+            <div className="google-auth">
+              {!GOOGLE_CLIENT_ID && (
+                <p className="field-error">Google Client ID is not configured (VITE_GOOGLE_CLIENT_ID).</p>
+              )}
+              {!googleVerified ? (
+                <>
+                  <div
+                    key={googleButtonKey}
+                    ref={googleBtnDivRef}
+                    className="google-signin-slot"
+                  />
+                  <p className="google-auth-hint">
+                    A Google account (such as Gmail) is required to write here. Sign in once to unlock the form—we keep your Google name or email private on the server.
+                  </p>
+                </>
+              ) : (
+                <div className="google-connected">
+                  <p className="google-ok">You’re signed in with Google. You can write your message now; your Google display name and email (when Google provides them) are stored only on the server and are not shown on the guestbook.</p>
+                  <button type="button" className="btn-ghost btn-google-out" onClick={disconnectGoogle}>
+                    Sign out
+                  </button>
+                </div>
+              )}
+              {googleAuthError && <span className="field-error">{googleAuthError}</span>}
+            </div>
+            {!canWrite && (
+              <div className="alert alert-auth-required">
+                Sign in with Google (Gmail or another Google account) to unlock the form and send a message.
+              </div>
+            )}
             <div className="field">
               <label htmlFor="name">
                 Name <span className="optional">(up to you 😄)</span>
@@ -323,6 +465,7 @@ export default function App() {
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className={errors.name ? "error" : ""}
+                disabled={!canWrite}
               />
               {errors.name && <span className="field-error">{errors.name}</span>}
             </div>
@@ -335,11 +478,12 @@ export default function App() {
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
                 className={errors.message ? "error" : ""}
+                disabled={!canWrite}
               />
-              <div className="char-count">{form.message.length} / 1000</div>
+              <div className="char-count">{form.message.length} / 10000</div>
               {errors.message && <span className="field-error">{errors.message}</span>}
             </div>
-            <button type="submit" className="btn-primary" disabled={submitting}>
+            <button type="submit" className="btn-primary" disabled={submitting || !canWrite}>
               {submitting ? "Sending…" : "Sign the guestbook"}
             </button>
           </form>

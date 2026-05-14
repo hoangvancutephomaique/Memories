@@ -3,7 +3,6 @@ import axios from "axios";
 export interface GuestEntry {
   id: number;
   name: string;
-  email?: string;
   message: string;
   createdAt: string;
 }
@@ -24,8 +23,11 @@ const api = axios.create({
 export const fetchEntries = () =>
   api.get<GuestEntry[]>("/entries").then((r) => r.data);
 
-export const createEntry = (entry: NewEntry) =>
-  api.post<GuestEntry>("/entries", entry).then((r) => r.data);
+export const createEntry = (entry: NewEntry, googleIdToken: string) =>
+  api.post<GuestEntry>("/entries", { ...entry, googleIdToken }).then((r) => r.data);
+
+export const verifyGoogleIdToken = (idToken: string) =>
+  api.post("/auth/verify-google-token", { idToken });
 
 export const verifyDeleteSecret = (secret: string) =>
   api.post("/auth/verify-delete-secret", { secret });

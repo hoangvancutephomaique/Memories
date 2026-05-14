@@ -46,6 +46,7 @@ jobs:
           VITE_OWNER_USER: ${{ secrets.VITE_OWNER_USER }}
           VITE_OWNER_PASS: ${{ secrets.VITE_OWNER_PASS }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
         run: npm run build
 
       - name: Setup Pages
