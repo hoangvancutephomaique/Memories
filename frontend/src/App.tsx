@@ -149,7 +149,7 @@ export default function App() {
 
     el.replaceChildren();
     window.google.accounts.id.renderButton(el, {
-      theme: "outline",
+      theme: "filled_blue",
       size: "large",
       width: Math.min(400, Math.max(250, el.offsetWidth || 384)),
       text: "continue_with",
@@ -441,8 +441,8 @@ export default function App() {
                 </>
               ) : (
                 <div className="google-connected">
-                  <p className="google-ok">You’re signed in with Google</p>
-                  <button type="button" className="btn-ghost btn-google-out" onClick={disconnectGoogle}>
+                  <p className="google-ok">You’re signed in with Google!</p>
+                  <button type="button" className="btn-google-out" onClick={disconnectGoogle}>
                     Sign out
                   </button>
                 </div>
