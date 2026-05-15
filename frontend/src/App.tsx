@@ -248,7 +248,7 @@ export default function App() {
     const errs: Partial<NewEntry> = {};
     if (form.name.length > 100) errs.name = "Max 100 characters.";
     if (!form.message.trim()) errs.message = "Message is required.";
-    else if (form.message.length > 10000) errs.message = "Max 10000 characters.";
+    else if (form.message.length > 500000) errs.message = "Max 500000 characters.";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -480,7 +480,7 @@ export default function App() {
                 className={errors.message ? "error" : ""}
                 disabled={!canWrite}
               />
-              <div className="char-count">{form.message.length} / 10000</div>
+              <div className="char-count">{form.message.length} / 500000</div>
               {errors.message && <span className="field-error">{errors.message}</span>}
             </div>
             <button type="submit" className="btn-primary" disabled={submitting || !canWrite}>
