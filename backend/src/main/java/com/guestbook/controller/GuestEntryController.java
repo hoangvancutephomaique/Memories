@@ -2,8 +2,9 @@ package com.guestbook.controller;
 
 import com.guestbook.config.DeleteSecretGuard;
 import com.guestbook.dto.CreateEntryRequest;
+import com.guestbook.dto.GoogleProfile;
 import com.guestbook.model.GuestEntry;
-import com.guestbook.service.FacebookIdentityService;
+import com.guestbook.service.GoogleIdentityService;
 import com.guestbook.service.GuestEntryService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,15 +18,15 @@ import java.util.List;
 public class GuestEntryController {
 
     private final GuestEntryService service;
-    private final FacebookIdentityService facebookIdentityService;
+    private final GoogleIdentityService googleIdentityService;
     private final DeleteSecretGuard deleteSecretGuard;
 
     public GuestEntryController(
             GuestEntryService service,
-            FacebookIdentityService facebookIdentityService,
+            GoogleIdentityService googleIdentityService,
             DeleteSecretGuard deleteSecretGuard) {
         this.service = service;
-        this.facebookIdentityService = facebookIdentityService;
+        this.googleIdentityService = googleIdentityService;
         this.deleteSecretGuard = deleteSecretGuard;
     }
 
@@ -36,9 +37,9 @@ public class GuestEntryController {
 
     @PostMapping
     public ResponseEntity<GuestEntry> create(@Valid @RequestBody CreateEntryRequest request) {
-        String facebookName;
+        GoogleProfile profile;
         try {
-            facebookName = facebookIdentityService.resolveName(request.facebookAccessToken());
+            profile = googleIdentityService.resolveProfile(request.googleIdToken());
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
         } catch (IllegalArgumentException e) {
@@ -51,7 +52,8 @@ public class GuestEntryController {
                 : request.name().trim();
         entry.setName(publicName);
         entry.setMessage(request.message().trim());
-        entry.setFacebookName(facebookName);
+        entry.setGoogleDisplayName(profile.displayName());
+        entry.setGoogleAccountEmail(profile.email());
 
         GuestEntry saved = service.save(entry);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);

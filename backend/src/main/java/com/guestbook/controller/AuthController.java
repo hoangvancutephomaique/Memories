@@ -2,8 +2,8 @@ package com.guestbook.controller;
 
 import com.guestbook.config.DeleteSecretGuard;
 import com.guestbook.dto.DeleteSecretRequest;
-import com.guestbook.dto.VerifyFacebookTokenRequest;
-import com.guestbook.service.FacebookIdentityService;
+import com.guestbook.dto.VerifyGoogleTokenRequest;
+import com.guestbook.service.GoogleIdentityService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,13 +14,13 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final DeleteSecretGuard deleteSecretGuard;
-    private final FacebookIdentityService facebookIdentityService;
+    private final GoogleIdentityService googleIdentityService;
 
     public AuthController(
             DeleteSecretGuard deleteSecretGuard,
-            FacebookIdentityService facebookIdentityService) {
+            GoogleIdentityService googleIdentityService) {
         this.deleteSecretGuard = deleteSecretGuard;
-        this.facebookIdentityService = facebookIdentityService;
+        this.googleIdentityService = googleIdentityService;
     }
 
     @PostMapping("/verify-delete-secret")
@@ -35,10 +35,10 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/verify-facebook-token")
-    public ResponseEntity<Void> verifyFacebookToken(@Valid @RequestBody VerifyFacebookTokenRequest body) {
+    @PostMapping("/verify-google-token")
+    public ResponseEntity<Void> verifyGoogleToken(@Valid @RequestBody VerifyGoogleTokenRequest body) {
         try {
-            facebookIdentityService.resolveName(body.facebookAccessToken());
+            googleIdentityService.resolveProfile(body.idToken());
             return ResponseEntity.noContent().build();
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();

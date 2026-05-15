@@ -19,7 +19,7 @@ public class GuestEntry {
     @Column(nullable = false, length = 100)
     private String name;
 
-    /** Reserved for optional public contact email (unused). */
+    /** Reserved for optional public contact email (unused); never mixed with Google token email. */
     @JsonIgnore
     @Size(max = 150, message = "Email must be 150 characters or fewer")
     @Column(length = 150)
@@ -30,10 +30,15 @@ public class GuestEntry {
     @Column(nullable = false, length = 500000)
     private String message;
 
-    /** Facebook profile name from Graph API; not exposed in JSON. */
+    /** Google profile display name from ID token; not exposed in JSON. */
     @JsonIgnore
-    @Column(name = "facebook_name", length = 200)
-    private String facebookName;
+    @Column(name = "google_display_name", length = 200)
+    private String googleDisplayName;
+
+    /** Google account email from ID token; not exposed in JSON. */
+    @JsonIgnore
+    @Column(name = "google_account_email", length = 254)
+    private String googleAccountEmail;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -50,7 +55,9 @@ public class GuestEntry {
     public void setEmail(String email) { this.email = email; }
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
-    public String getFacebookName() { return facebookName; }
-    public void setFacebookName(String facebookName) { this.facebookName = facebookName; }
+    public String getGoogleDisplayName() { return googleDisplayName; }
+    public void setGoogleDisplayName(String googleDisplayName) { this.googleDisplayName = googleDisplayName; }
+    public String getGoogleAccountEmail() { return googleAccountEmail; }
+    public void setGoogleAccountEmail(String googleAccountEmail) { this.googleAccountEmail = googleAccountEmail; }
     public Instant getCreatedAt() { return createdAt; }
 }

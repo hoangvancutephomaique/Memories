@@ -1,34 +1,34 @@
 import { useEffect, useRef, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { fetchEntries, createEntry, deleteEntry, verifyDeleteSecret, verifyFacebookToken } from "./api";
+import { fetchEntries, createEntry, deleteEntry, verifyDeleteSecret, verifyGoogleIdToken } from "./api";
 import type { GuestEntry, NewEntry } from "./api";
 import "./App.css";
 
 const OWNER_USER = import.meta.env.VITE_OWNER_USER as string;
 const OWNER_PASS = import.meta.env.VITE_OWNER_PASS as string;
 const OWNER_REMEMBER_KEY = "guestbook_owner_remembered";
-const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID as string | undefined;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
-const FACEBOOK_SESSION_KEY = "guestbook_facebook_access_token";
+const GOOGLE_ID_STORAGE_KEY = "guestbook_google_id_token";
 
-type FacebookAuthResponse = { accessToken: string };
-type FacebookLoginStatus = {
-  status: "connected" | "not_authorized" | "unknown";
-  authResponse?: FacebookAuthResponse;
-};
-type FacebookSDK = {
-  init: (config: Record<string, unknown>) => void;
-  getLoginStatus: (cb: (resp: FacebookLoginStatus) => void) => void;
-  login: (cb: (resp: FacebookLoginStatus) => void, options?: { scope?: string }) => void;
-  logout: (cb: (response: unknown) => void) => void;
+type GoogleCredentialResponse = {
+  credential: string;
 };
 
 declare global {
   interface Window {
-    FB?: FacebookSDK;
-    fbAsyncInit?: () => void;
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: { client_id: string; callback: (r: GoogleCredentialResponse) => void }) => void;
+          renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void;
+        };
+      };
+    };
   }
 }
+
+let googleAccountsInitialized = false;
 
 const EMPTY_FORM: NewEntry = { name: "", message: "" };
 
@@ -38,11 +38,12 @@ export default function App() {
   const [errors, setErrors] = useState<Partial<NewEntry>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [facebookAccessToken, setFacebookAccessToken] = useState("");
-  const [facebookVerified, setFacebookVerified] = useState(false);
-  const [facebookBusy, setFacebookBusy] = useState(false);
-  const [facebookError, setFacebookError] = useState("");
-  const [fbReady, setFbReady] = useState(false);
+  const [googleIdToken, setGoogleIdToken] = useState("");
+  const [googleVerified, setGoogleVerified] = useState(false);
+  const [googleAuthError, setGoogleAuthError] = useState("");
+  const [gsiReady, setGsiReady] = useState(false);
+  const [googleButtonKey, setGoogleButtonKey] = useState(0);
+  const googleBtnDivRef = useRef<HTMLDivElement>(null);
 
   // ── owner view ────────────────────────────────────────────
   const [unlocked, setUnlocked] = useState(false);
@@ -86,96 +87,76 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem(FACEBOOK_SESSION_KEY);
+    const stored = sessionStorage.getItem(GOOGLE_ID_STORAGE_KEY);
     if (!stored) return;
-    void verifyFacebookToken(stored)
+    void verifyGoogleIdToken(stored)
       .then(() => {
-        setFacebookAccessToken(stored);
-        setFacebookVerified(true);
-        setFacebookError("");
+        setGoogleIdToken(stored);
+        setGoogleVerified(true);
+        setGoogleAuthError("");
       })
       .catch(() => {
-        sessionStorage.removeItem(FACEBOOK_SESSION_KEY);
+        sessionStorage.removeItem(GOOGLE_ID_STORAGE_KEY);
       });
   }, []);
 
   useEffect(() => {
-    if (!FACEBOOK_APP_ID) return;
-
-    const initFromToken = async (token?: string) => {
-      if (!token) return;
-      try {
-        await verifyFacebookToken(token);
-        setFacebookAccessToken(token);
-        setFacebookVerified(true);
-        setFacebookError("");
-        sessionStorage.setItem(FACEBOOK_SESSION_KEY, token);
-      } catch {
-        sessionStorage.removeItem(FACEBOOK_SESSION_KEY);
-      }
-    };
-
-    window.fbAsyncInit = () => {
-      window.FB?.init({
-        appId: FACEBOOK_APP_ID,
-        cookie: true,
-        xfbml: false,
-        version: "v21.0",
-      });
-      setFbReady(true);
-      window.FB?.getLoginStatus((response) => {
-        void initFromToken(response.authResponse?.accessToken);
-      });
-    };
-
-    if (document.getElementById("facebook-jssdk")) {
-      if (window.FB) setFbReady(true);
-      return;
+    const markReady = () => setGsiReady(true);
+    const existing = document.querySelector(
+      'script[src="https://accounts.google.com/gsi/client"]',
+    ) as HTMLScriptElement | null;
+    if (existing) {
+      if (window.google?.accounts?.id) markReady();
+      else existing.addEventListener("load", markReady);
+      return () => existing.removeEventListener("load", markReady);
     }
-    const js = document.createElement("script");
-    js.id = "facebook-jssdk";
-    js.src = "https://connect.facebook.net/en_US/sdk.js";
-    js.async = true;
-    document.body.appendChild(js);
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = markReady;
+    document.body.appendChild(script);
   }, []);
 
-  function signInWithFacebook() {
-    if (!FACEBOOK_APP_ID) {
-      setFacebookError("Facebook App ID is not configured (VITE_FACEBOOK_APP_ID).");
-      return;
+  useEffect(() => {
+    if (!gsiReady || !GOOGLE_CLIENT_ID || googleVerified) return;
+    const el = googleBtnDivRef.current;
+    if (!el || !window.google?.accounts?.id) return;
+
+    if (!googleAccountsInitialized) {
+      googleAccountsInitialized = true;
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response) => {
+          const token = response.credential;
+          void (async () => {
+            try {
+              await verifyGoogleIdToken(token);
+              sessionStorage.setItem(GOOGLE_ID_STORAGE_KEY, token);
+              setGoogleIdToken(token);
+              setGoogleVerified(true);
+              setGoogleAuthError("");
+            } catch {
+              setGoogleIdToken("");
+              setGoogleVerified(false);
+              setGoogleAuthError("Could not verify Google sign-in. Try again.");
+              sessionStorage.removeItem(GOOGLE_ID_STORAGE_KEY);
+            }
+          })();
+        },
+      });
     }
-    if (!window.FB) {
-      setFacebookError("Facebook SDK is still loading. Try again in a moment.");
-      return;
-    }
-    setFacebookBusy(true);
-    setFacebookError("");
-    window.FB.login(
-      (response) => {
-        setFacebookBusy(false);
-        const token = response.authResponse?.accessToken;
-        if (!token) {
-          setFacebookError("Facebook sign-in was cancelled or did not return a token.");
-          return;
-        }
-        void (async () => {
-          try {
-            await verifyFacebookToken(token);
-            sessionStorage.setItem(FACEBOOK_SESSION_KEY, token);
-            setFacebookAccessToken(token);
-            setFacebookVerified(true);
-            setFacebookError("");
-          } catch {
-            setFacebookAccessToken("");
-            setFacebookVerified(false);
-            setFacebookError("Could not verify Facebook sign-in. Try again.");
-            sessionStorage.removeItem(FACEBOOK_SESSION_KEY);
-          }
-        })();
-      },
-      { scope: "public_profile" },
-    );
-  }
+
+    el.replaceChildren();
+    window.google.accounts.id.renderButton(el, {
+      theme: "outline",
+      size: "large",
+      width: Math.min(400, Math.max(250, el.offsetWidth || 384)),
+      text: "continue_with",
+      shape: "rectangular",
+      logo_alignment: "left",
+    });
+  }, [gsiReady, googleVerified, googleButtonKey]);
 
   function openOwnerView() {
     setUserInput("");
@@ -275,8 +256,8 @@ export default function App() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    if (!facebookVerified || !facebookAccessToken) {
-      setFacebookError("Sign in with Facebook before sending a message.");
+    if (!googleVerified || !googleIdToken) {
+      setGoogleAuthError("Sign in with your Google account (e.g. Gmail) before sending a message.");
       return;
     }
     setSubmitting(true);
@@ -284,7 +265,7 @@ export default function App() {
       const saved = await createEntry({
         name: form.name.trim() || "Anonymous",
         message: form.message.trim(),
-      }, facebookAccessToken);
+      }, googleIdToken);
       if (unlocked) setEntries((prev) => [saved, ...prev]);
       setForm(EMPTY_FORM);
       setErrors({});
@@ -308,19 +289,15 @@ export default function App() {
     }
   }
 
-  function disconnectFacebook() {
-    sessionStorage.removeItem(FACEBOOK_SESSION_KEY);
-    setFacebookAccessToken("");
-    setFacebookVerified(false);
-    setFacebookError("");
-    try {
-      window.FB?.logout(() => {});
-    } catch {
-      // ignore
-    }
+  function disconnectGoogle() {
+    sessionStorage.removeItem(GOOGLE_ID_STORAGE_KEY);
+    setGoogleIdToken("");
+    setGoogleVerified(false);
+    setGoogleAuthError("");
+    setGoogleButtonKey((k) => k + 1);
   }
 
-  const canWrite = facebookVerified && !!facebookAccessToken;
+  const canWrite = googleVerified && !!googleIdToken;
   function getInitials(name: string) {
     if (name === "Anonymous") return "?";
     return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
@@ -447,37 +424,34 @@ export default function App() {
             </div>
           )}
           <form onSubmit={handleSubmit} noValidate>
-            <div className="facebook-auth">
-              {!facebookVerified ? (
-                <div className="facebook-prelogin-panel">
-                  {!FACEBOOK_APP_ID && (
-                    <p className="field-error">Facebook App ID is not configured (VITE_FACEBOOK_APP_ID).</p>
+            <div className="google-auth">
+              {!googleVerified ? (
+                <div className="google-prelogin-panel">
+                  {!GOOGLE_CLIENT_ID && (
+                    <p className="field-error">Google Client ID is not configured (VITE_GOOGLE_CLIENT_ID).</p>
                   )}
-                  <button
-                    type="button"
-                    className="btn-facebook-login"
-                    onClick={signInWithFacebook}
-                    disabled={facebookBusy || !fbReady}
-                  >
-                    {facebookBusy ? "Connecting…" : "Continue with Facebook"}
-                  </button>
-                  {facebookError && <span className="field-error">{facebookError}</span>}
+                  <div
+                    key={googleButtonKey}
+                    ref={googleBtnDivRef}
+                    className="google-signin-slot"
+                  />
+                  {googleAuthError && <span className="field-error">{googleAuthError}</span>}
                   {!canWrite && (
                     <div className="alert alert-auth-required">
-                      Sign in with Facebook to unlock the form. Your Facebook name is stored privately!
+                      Sign in with Gmail to unlock the form and send a message. We keep your Google name or email private!
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="facebook-connected">
-                  <p className="facebook-ok">Facebook connected - you can now sign the guestbook.</p>
-                  <button type="button" className="btn-facebook-out" onClick={disconnectFacebook}>
+                <div className="google-connected">
+                  <p className="google-ok">Google connected...</p>
+                  <button type="button" className="btn-google-out" onClick={disconnectGoogle}>
                     Sign out
                   </button>
                 </div>
               )}
-              {facebookError && facebookVerified && (
-                <span className="field-error">{facebookError}</span>
+              {googleAuthError && googleVerified && (
+                <span className="field-error">{googleAuthError}</span>
               )}
             </div>
             <div className="field">

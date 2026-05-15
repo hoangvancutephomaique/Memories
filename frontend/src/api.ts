@@ -23,11 +23,11 @@ const api = axios.create({
 export const fetchEntries = () =>
   api.get<GuestEntry[]>("/entries").then((r) => r.data);
 
-export const createEntry = (entry: NewEntry, facebookAccessToken: string) =>
-  api.post<GuestEntry>("/entries", { ...entry, facebookAccessToken }).then((r) => r.data);
+export const createEntry = (entry: NewEntry, googleIdToken: string) =>
+  api.post<GuestEntry>("/entries", { ...entry, googleIdToken }).then((r) => r.data);
 
-export const verifyFacebookToken = (facebookAccessToken: string) =>
-  api.post("/auth/verify-facebook-token", { facebookAccessToken });
+export const verifyGoogleIdToken = (idToken: string) =>
+  api.post("/auth/verify-google-token", { idToken });
 
 export const verifyDeleteSecret = (secret: string) =>
   api.post("/auth/verify-delete-secret", { secret });
