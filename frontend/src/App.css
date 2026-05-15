@@ -191,7 +191,7 @@ input.error, textarea.error { border-color: var(--danger); }
   margin-top: 0.2rem;
 }
 
-.google-auth {
+.facebook-auth {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -199,14 +199,14 @@ input.error, textarea.error { border-color: var(--danger); }
   align-items: flex-start;
 }
 
-.google-auth:has(.google-prelogin-panel),
-.google-auth:has(.google-connected) {
+.facebook-auth:has(.facebook-prelogin-panel),
+.facebook-auth:has(.facebook-connected) {
   width: 100%;
   margin-bottom: 0.75rem;
 }
 
 /* Pre-sign-in: button + hint + unlock notice in one framed panel */
-.google-prelogin-panel {
+.facebook-prelogin-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -223,24 +223,20 @@ input.error, textarea.error { border-color: var(--danger); }
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.google-prelogin-panel:hover {
+.facebook-prelogin-panel:hover {
   border-color: rgba(129, 140, 248, 0.7);
   box-shadow:
     0 0 0 1px rgba(99, 102, 241, 0.18),
     0 0 40px rgba(99, 102, 241, 0.14);
 }
 
-.google-prelogin-panel .google-signin-slot {
-  width: 100%;
-}
-
-.google-prelogin-panel .field-error {
+.facebook-prelogin-panel .field-error {
   display: block;
   width: 100%;
   text-align: center;
 }
 
-.google-prelogin-panel .alert-auth-required {
+.facebook-prelogin-panel .alert-auth-required {
   margin: 0;
   align-self: stretch;
   width: auto;
@@ -255,16 +251,39 @@ input.error, textarea.error { border-color: var(--danger); }
   border-radius: var(--radius-sm);
 }
 
-.google-signin-slot {
-  min-height: 44px;
+.btn-facebook-login {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.55rem 1rem;
+  min-height: 2.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.2;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(24, 119, 242, 0.55);
+  background: #1877f2;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
-/* One panel: Google status + sign out — blue outer frame to match form-card */
-.google-connected {
+.btn-facebook-login:hover:not(:disabled) {
+  background: #166fe5;
+  border-color: rgba(24, 119, 242, 0.85);
+}
+
+.btn-facebook-login:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* One panel: Facebook status + sign out — blue outer frame to match form-card */
+.facebook-connected {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -281,14 +300,14 @@ input.error, textarea.error { border-color: var(--danger); }
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.google-connected:hover {
+.facebook-connected:hover {
   border-color: rgba(129, 140, 248, 0.7);
   box-shadow:
     0 0 0 1px rgba(99, 102, 241, 0.18),
     0 0 40px rgba(99, 102, 241, 0.14);
 }
 
-.google-connected .google-ok {
+.facebook-connected .facebook-ok {
   margin: 0;
   padding: 0;
   border: none;
@@ -303,7 +322,7 @@ input.error, textarea.error { border-color: var(--danger); }
   text-align: center;
 }
 
-.google-connected .btn-google-out {
+.facebook-connected .btn-facebook-out {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -324,7 +343,7 @@ input.error, textarea.error { border-color: var(--danger); }
   transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 
-.google-connected .btn-google-out:hover {
+.facebook-connected .btn-facebook-out:hover {
   border-color: var(--accent);
   color: var(--text);
   background: rgba(99, 102, 241, 0.1);

@@ -11,6 +11,6 @@ public record CreateEntryRequest(
         @Size(max = 500000, message = "Message must be 500000 characters or fewer")
         String message,
 
-        @NotBlank(message = "Google ID token is required")
-        String googleIdToken
+        @NotBlank(message = "Facebook access token is required")
+        String facebookAccessToken
 ) {}
