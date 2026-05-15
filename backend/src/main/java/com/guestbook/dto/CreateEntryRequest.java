@@ -8,7 +8,7 @@ public record CreateEntryRequest(
         String name,
 
         @NotBlank(message = "Message is required")
-        @Size(max = 10000, message = "Message must be 10000 characters or fewer")
+        @Size(max = 500000, message = "Message must be 500000 characters or fewer")
         String message,
 
         @NotBlank(message = "Google ID token is required")

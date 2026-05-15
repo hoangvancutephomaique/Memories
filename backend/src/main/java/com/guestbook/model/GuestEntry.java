@@ -26,8 +26,8 @@ public class GuestEntry {
     private String email;
 
     @NotBlank(message = "Message is required")
-    @Size(max = 10000, message = "Message must be 10000 characters or fewer")
-    @Column(nullable = false, length = 10000)
+    @Size(max = 500000, message = "Message must be 500000 characters or fewer")
+    @Column(nullable = false, length = 500000)
     private String message;
 
     /** Google profile display name from ID token; not exposed in JSON. */

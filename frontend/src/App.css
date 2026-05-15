@@ -234,12 +234,6 @@ input.error, textarea.error { border-color: var(--danger); }
   width: 100%;
 }
 
-.google-prelogin-panel .google-auth-hint {
-  text-align: center;
-  max-width: 22rem;
-  margin: 0;
-}
-
 .google-prelogin-panel .field-error {
   display: block;
   width: 100%;
@@ -267,12 +261,6 @@ input.error, textarea.error { border-color: var(--danger); }
   align-items: center;
   justify-content: center;
   width: 100%;
-}
-
-.google-auth-hint {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  line-height: 1.45;
 }
 
 /* One panel: Google status + sign out — blue outer frame to match form-card */

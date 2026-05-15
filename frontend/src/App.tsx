@@ -435,13 +435,10 @@ export default function App() {
                     ref={googleBtnDivRef}
                     className="google-signin-slot"
                   />
-                  <p className="google-auth-hint">
-                    A Google account is required to write here. Sign in once to unlock the form - we keep your Google name or email private on the server
-                  </p>
                   {googleAuthError && <span className="field-error">{googleAuthError}</span>}
                   {!canWrite && (
                     <div className="alert alert-auth-required">
-                      Sign in with Gmail to unlock the form and send a message
+                      Sign in with Gmail to unlock the form and send a message. We keep your Google name or email private!
                     </div>
                   )}
                 </div>
