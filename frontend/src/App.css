@@ -105,6 +105,23 @@ body {
   box-shadow: var(--shadow);
 }
 
+.form-card {
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(99, 102, 241, 0.1),
+    var(--shadow),
+    0 0 48px rgba(99, 102, 241, 0.1);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.form-card:hover {
+  border-color: rgba(129, 140, 248, 0.75);
+  box-shadow:
+    0 0 0 1px rgba(99, 102, 241, 0.25),
+    var(--shadow),
+    0 0 56px rgba(99, 102, 241, 0.18);
+}
+
 .form-card h2,
 .entries-section h2 {
   font-size: 1.15rem;
