@@ -441,7 +441,7 @@ export default function App() {
                 </>
               ) : (
                 <div className="google-connected">
-                  <p className="google-ok">You’re signed in with Google!</p>
+                  <p className="google-ok">Google connected...</p>
                   <button type="button" className="btn-google-out" onClick={disconnectGoogle}>
                     Sign out
                   </button>
