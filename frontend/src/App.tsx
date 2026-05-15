@@ -149,7 +149,7 @@ export default function App() {
 
     el.replaceChildren();
     window.google.accounts.id.renderButton(el, {
-      theme: "filled_blue",
+      theme: "outline",
       size: "large",
       width: Math.min(400, Math.max(250, el.offsetWidth || 384)),
       text: "continue_with",
