@@ -425,11 +425,11 @@ export default function App() {
           )}
           <form onSubmit={handleSubmit} noValidate>
             <div className="google-auth">
-              {!GOOGLE_CLIENT_ID && (
-                <p className="field-error">Google Client ID is not configured (VITE_GOOGLE_CLIENT_ID).</p>
-              )}
               {!googleVerified ? (
-                <>
+                <div className="google-prelogin-panel">
+                  {!GOOGLE_CLIENT_ID && (
+                    <p className="field-error">Google Client ID is not configured (VITE_GOOGLE_CLIENT_ID).</p>
+                  )}
                   <div
                     key={googleButtonKey}
                     ref={googleBtnDivRef}
@@ -438,7 +438,13 @@ export default function App() {
                   <p className="google-auth-hint">
                     A Google account is required to write here. Sign in once to unlock the form - we keep your Google name or email private on the server.
                   </p>
-                </>
+                  {googleAuthError && <span className="field-error">{googleAuthError}</span>}
+                  {!canWrite && (
+                    <div className="alert alert-auth-required">
+                      Sign in with Gmail to unlock the form and send a message.
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="google-connected">
                   <p className="google-ok">Google connected...</p>
@@ -447,13 +453,10 @@ export default function App() {
                   </button>
                 </div>
               )}
-              {googleAuthError && <span className="field-error">{googleAuthError}</span>}
+              {googleAuthError && googleVerified && (
+                <span className="field-error">{googleAuthError}</span>
+              )}
             </div>
-            {!canWrite && (
-              <div className="alert alert-auth-required">
-                Sign in with Gmail to unlock the form and send a message.
-              </div>
-            )}
             <div className="field">
               <label htmlFor="name">
                 Name <span className="optional">(up to you 😄)</span>
