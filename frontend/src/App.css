@@ -242,9 +242,9 @@ input.error, textarea.error { border-color: var(--danger); }
 
 .google-prelogin-panel .alert-auth-required {
   margin: 0;
-  align-self: center;
-  width: fit-content;
-  max-width: min(100%, 22rem);
+  align-self: stretch;
+  width: auto;
+  max-width: 100%;
   box-sizing: border-box;
   padding: 0.55rem 0.75rem;
   font-size: 0.78rem;
