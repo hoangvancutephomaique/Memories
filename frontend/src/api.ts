@@ -23,6 +23,9 @@ const api = axios.create({
 export const fetchEntries = () =>
   api.get<GuestEntry[]>("/entries").then((r) => r.data);
 
+/** Fire-and-forget: wake the Render instance before the user tries to sign in. */
+export const warmUp = () => api.get("/entries").catch(() => {});
+
 export const createEntry = (entry: NewEntry, googleIdToken: string) =>
   api.post<GuestEntry>("/entries", { ...entry, googleIdToken }).then((r) => r.data);
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { fetchEntries, createEntry, deleteEntry, verifyDeleteSecret, verifyGoogleIdToken } from "./api";
+import { fetchEntries, createEntry, deleteEntry, verifyDeleteSecret, verifyGoogleIdToken, warmUp } from "./api";
 import type { GuestEntry, NewEntry } from "./api";
 import "./App.css";
 
@@ -73,6 +73,10 @@ export default function App() {
   useEffect(() => {
     if (showDeleteModal) setTimeout(() => deletePwRef.current?.focus(), 50);
   }, [showDeleteModal]);
+
+  useEffect(() => {
+    warmUp();
+  }, []);
 
   useEffect(() => {
     try {
